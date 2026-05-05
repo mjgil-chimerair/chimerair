@@ -1,0 +1,19 @@
+[package]
+name = "chimera-link"
+version = "0.1.0"
+edition = "2021"
+description = "Chimera linker and symbol resolution"
+
+[dependencies]
+chimera-meta = { path = "../chimera-meta" }
+chimera-object = { path = "../chimera-object" }
+chimera-diagnostics = { path = "../chimera-diagnostics" }
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tempfile = "3.8"
+walkdir = "2.4"
+log = "0.4"
+object = "0.36"
+
+[dev-dependencies]
+predicates = "3.0"

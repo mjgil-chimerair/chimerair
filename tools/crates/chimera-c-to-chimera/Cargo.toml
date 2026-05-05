@@ -1,0 +1,24 @@
+[package]
+name = "chimera-c-to-chimera"
+version = "0.1.0"
+edition = "2021"
+description = "C dialect to ChimeraIR lowering - emit textual .chimera and/or Chimera MLIR using real compiler-core types/ops and C source locations"
+
+[dependencies]
+chimera-c-dialect = { path = "../chimera-c-dialect" }
+chimera-c-schema = { path = "../chimera-c-schema" }
+chimera-c-abi = { path = "../chimera-c-abi" }
+chimera-c-layout = { path = "../chimera-c-layout" }
+chimera-meta = { path = "../chimera-meta" }
+chimera-object = { path = "../chimera-object" }
+zigmera-hash = { path = "../zigmera-hash" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[features]
+default = ["std"]
+std = []

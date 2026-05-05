@@ -1,0 +1,19 @@
+[package]
+name = "chimera-c-schema"
+version = "0.1.0"
+edition = "2021"
+description = "Chimera C schema definitions for .csnap, .cdep, .castpack, .cchmeta, .cchproof artifacts"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+blake3 = "1.5"
+indexmap = { version = "2.2", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[features]
+default = ["std"]
+std = []

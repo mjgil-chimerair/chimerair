@@ -1,0 +1,17 @@
+[package]
+name = "chimera-manifest"
+description = "Chimera project manifest parsing and validation"
+version = "0.1.0"
+edition = "2021"
+license = "ISC"
+rust-version = "1.85"
+
+[dependencies]
+anyhow = "1.0"
+chimera-component = { path = "../chimera-component" }
+regex = "1.10"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+
+[dev-dependencies]
+similar = "2.4"

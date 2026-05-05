@@ -1,0 +1,16 @@
+[package]
+name = "chimera-package"
+description = "Chimera runtime packaging for dlopen/cdylib delivery"
+version = "0.1.0"
+edition = "2021"
+license = "ISC"
+rust-version = "1.85"
+
+[features]
+default = ["std"]
+std = []
+
+[dependencies]
+chimera-artifact = { path = "../chimera-artifact" }
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
