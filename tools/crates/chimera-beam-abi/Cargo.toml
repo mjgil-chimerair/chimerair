@@ -1,0 +1,12 @@
+[package]
+name = "chimera-beam-abi"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+chimera-beam-dialect = { path = "../chimera-beam-dialect" }
+chimera-beam-process = { path = "../chimera-beam-process" }
+
+[dev-dependencies]

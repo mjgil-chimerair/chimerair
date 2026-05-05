@@ -1,0 +1,19 @@
+[package]
+name = "chimera-beam-bytecode"
+version = "0.1.0"
+edition = "2021"
+description = "BEAM bytecode disassembler and analyzer for chimera-beam"
+
+[dependencies]
+chimera-beam-schema = { path = "../chimera-beam-schema" }
+chimera-beam-ast = { path = "../chimera-beam-ast" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[features]
+default = ["std"]
+std = []

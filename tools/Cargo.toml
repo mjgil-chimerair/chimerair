@@ -1,0 +1,80 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/chimera-component",
+    "crates/chimera-artifact",
+    "crates/chimera-package",
+    "crates/chimera-cli",
+    "crates/chimera-meta",
+    "crates/chimera-object",
+    "crates/chimera-diagnostics",
+    "crates/chimera-proof-bridge",
+    "crates/chimera-build",
+    "crates/chimera-link",
+    "crates/chimera-wrappergen",
+    "crates/chimera-cache",
+    "crates/chimera-manifest",
+    "crates/chimera-adapter-c",
+    "crates/chimera-adapter-rust",
+    "crates/chimera-adapter-zig",
+    "crates/chimera-c-schema",
+    "crates/chimera-c-clang",
+    "crates/chimera-c-source",
+    "crates/chimera-c-build",
+    "crates/chimera-c-abi",
+    "crates/chimera-c-layout",
+    "crates/chimera-c-dialect",
+    "crates/chimera-c-to-chimera",
+    "crates/chimera-c-cache",
+    "crates/chimera-c-proof",
+    "crates/chimera-rust-schema",
+    "crates/chimera-rust-source",
+    "crates/chimera-rust-cargo",
+    "crates/chimera-rustc-driver",
+    "crates/chimera-rust-mir-import",
+    "crates/chimera-rust-dialect",
+    "crates/chimera-rust-to-chimera",
+    # NEW: Ownership, ABI, Layout, Effects, Proof crates
+    "crates/chimera-rust-ownership",
+    "crates/chimera-rust-abi",
+    "crates/chimera-rust-layout",
+    "crates/chimera-rust-effects",
+    "crates/chimera-rust-proof",
+    "crates/chimera-rust-cache",
+    # NEW: Zig to ChimeraIR lowering
+    "crates/chimera-zig-to-chimera",
+    "crates/zigmera-diagnostics",
+    "crates/zigmera-dialect",
+    "crates/zigmera-zig-shim",
+    "crates/zigmera-paths",
+    "crates/zigmera-hash",
+    "crates/zigmera-io",
+    "crates/zigmera-target",
+    "crates/zigmera-cli",
+    "crates/chimera-beam-schema",
+    "crates/chimera-beam-ast",
+    "crates/chimera-beam-bytecode",
+    "crates/chimera-beam-process",
+    "crates/chimera-beam-mailbox",
+    "crates/chimera-beam-dialect",
+    "crates/chimera-beam-supervisor",
+    "crates/chimera-beam-effects",
+    "crates/chimera-beam-to-actor",
+    "crates/chimera-beam-abi",
+    "crates/chimera-beam-ownership",
+    "crates/chimera-beam-cache",
+    "crates/chimera-beam-proof",
+    "crates/chimera-beam-cli",
+]
+
+[profile.release]
+opt-level = 3
+lto = true
+
+[profile.test]
+opt-level = 3  # Enables maximum optimization (0 is default for debug, 3 is default for release)
+debug = false  # Removes debug info to speed up compilation and reduce binary size
+
+[profile.dev]
+opt-level = 3  # Enables maximum optimization (0 is default for debug, 3 is default for release)
+debug = false  # Removes debug info to speed up compilation and reduce binary size
