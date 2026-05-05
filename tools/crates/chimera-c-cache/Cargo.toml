@@ -1,0 +1,26 @@
+[package]
+name = "chimera-c-cache"
+version = "0.1.0"
+edition = "2021"
+description = "C dependency/incremental cache crate - cache .csnap, .cdep, .castpack, C dialect, .chmeta, .cho, .cproof, wrappers, object/link metadata"
+
+[dependencies]
+chimera-c-schema = { path = "../chimera-c-schema" }
+chimera-c-dialect = { path = "../chimera-c-dialect" }
+chimera-c-abi = { path = "../chimera-c-abi" }
+chimera-c-layout = { path = "../chimera-c-layout" }
+chimera-meta = { path = "../chimera-meta" }
+chimera-object = { path = "../chimera-object" }
+zigmera-hash = { path = "../zigmera-hash" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+blake3 = "1.5"
+tempfile = "3.8"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[features]
+default = ["std"]
+std = []

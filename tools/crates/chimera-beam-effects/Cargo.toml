@@ -1,0 +1,11 @@
+[package]
+name = "chimera-beam-effects"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+chimera-beam-schema = { path = "../chimera-beam-schema" }
+
+[dev-dependencies]

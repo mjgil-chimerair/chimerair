@@ -1,0 +1,36 @@
+[package]
+name = "chimera-build"
+version = "0.1.0"
+edition = "2021"
+description = "Chimera build orchestration"
+
+[dependencies]
+chimera-artifact = { path = "../chimera-artifact" }
+chimera-component = { path = "../chimera-component" }
+chimera-meta = { path = "../chimera-meta" }
+chimera-object = { path = "../chimera-object" }
+chimera-diagnostics = { path = "../chimera-diagnostics" }
+chimera-wrappergen = { path = "../chimera-wrappergen" }
+chimera-adapter-c = { path = "../chimera-adapter-c" }
+chimera-c-abi = { path = "../chimera-c-abi" }
+chimera-c-dialect = { path = "../chimera-c-dialect" }
+chimera-c-schema = { path = "../chimera-c-schema" }
+chimera-c-to-chimera = { path = "../chimera-c-to-chimera" }
+chimera-adapter-rust = { path = "../chimera-adapter-rust" }
+chimera-adapter-zig = { path = "../chimera-adapter-zig" }
+chimera-cache = { path = "../chimera-cache" }
+chimera-rust-cargo = { path = "../chimera-rust-cargo" }
+chimera-rust-to-chimera = { path = "../chimera-rust-to-chimera" }
+chimera-rust-source = { path = "../chimera-rust-source" }
+chimera-rust-schema = { path = "../chimera-rust-schema" }
+chimera-zig-to-chimera = { path = "../chimera-zig-to-chimera" }
+zigmera-dialect = { path = "../zigmera-dialect" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+log = "0.4"
+rayon = "1.8"
+toml = "0.8"
+
+[dev-dependencies]
+tempfile = "3.8"

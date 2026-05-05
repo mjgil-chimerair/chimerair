@@ -1,0 +1,23 @@
+[package]
+name = "chimera-c-clang"
+version = "0.1.0"
+edition = "2021"
+description = "Clang/libclang extraction crate for C AST, types, layouts, macros, and diagnostics"
+
+[dependencies]
+chimera-c-schema = { path = "../chimera-c-schema" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+blake3 = "1.5"
+indexmap = { version = "2.2", features = ["serde"] }
+tempfile = "3.8"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[features]
+default = ["std"]
+std = []
+# Enable libclang backend (requires libclang installed)
+libclang = []

@@ -1,0 +1,20 @@
+[package]
+name = "chimera-c-dialect"
+version = "0.1.0"
+edition = "2021"
+description = "C semantic dialect crate for declarations, types, expressions, statements, memory operations, calls, volatile, restrict, const, atomics, and unsafe/trust assumptions"
+
+[dependencies]
+chimera-c-schema = { path = "../chimera-c-schema" }
+chimera-c-abi = { path = "../chimera-c-abi" }
+chimera-c-layout = { path = "../chimera-c-layout" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[features]
+default = ["std"]
+std = []

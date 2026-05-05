@@ -1,0 +1,35 @@
+[package]
+name = "chimera-beam-cli"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "BEAM CLI integration for ChimeraIR"
+repository = "https://github.com/chimerair/chimerair"
+categories = ["compilers", " Beam", "cli"]
+keywords = ["Beam", "Erlang", "cli"]
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chimera-beam-schema = { path = "../chimera-beam-schema" }
+chimera-beam-ast = { path = "../chimera-beam-ast" }
+chimera-beam-bytecode = { path = "../chimera-beam-bytecode" }
+chimera-beam-dialect = { path = "../chimera-beam-dialect" }
+chimera-beam-process = { path = "../chimera-beam-process" }
+chimera-beam-mailbox = { path = "../chimera-beam-mailbox" }
+chimera-beam-supervisor = { path = "../chimera-beam-supervisor" }
+chimera-beam-effects = { path = "../chimera-beam-effects" }
+chimera-beam-to-actor = { path = "../chimera-beam-to-actor" }
+chimera-beam-abi = { path = "../chimera-beam-abi" }
+chimera-beam-ownership = { path = "../chimera-beam-ownership" }
+chimera-beam-cache = { path = "../chimera-beam-cache" }
+chimera-beam-proof = { path = "../chimera-beam-proof" }
+log = "0.4"
+env_logger = "0.10"
+sha2 = "0.10"
+hex = "0.4"
+
+[dev-dependencies]
+tempfile = "3.8"
