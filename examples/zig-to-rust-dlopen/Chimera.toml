@@ -1,0 +1,49 @@
+# Zig → Rust runtime-dlopen example
+#
+# Zig executable that dynamically loads a Rust cdylib at runtime via dlopen.
+
+version = "0.2.0"
+name = "zig-rust-dlopen"
+description = "Zig executable dynamically loading Rust cdylib"
+
+[chimera]
+version = "0.1.0"
+
+[[components]]
+id = "rust_core"
+language = "rust"
+kind = "cargo-package"
+manifest = "Cargo.toml"
+package = "rust_core"
+crate_types = ["cdylib"]
+features = []
+panic_policy = "abort"
+exported_symbols = ["vcore_create", "vcore_destroy", "vcore_analyze", "vcore_free_bytes"]
+
+[[components]]
+id = "zig_app"
+language = "zig"
+kind = "zig-exe"
+roots = ["src/main.zig", "src/vcore_client.zig"]
+
+[components.modules]
+name = "vcore_client"
+path = "src/vcore_client.zig"
+
+[[targets]]
+triple = "x86_64-unknown-linux-gnu"
+features = []
+
+[runtime]
+mode = "std"
+output = "executable"
+
+# ABI edge for runtime-dlopen
+[[abi_edges]]
+consumer = "zig_app"
+provider = "rust_core"
+symbols = ["vcore_create", "vcore_destroy", "vcore_analyze", "vcore_free_bytes"]
+mode = "runtime-dlopen"
+wrapper = "auto"
+proof = "required"
+runtime_arg = "--rust-lib"

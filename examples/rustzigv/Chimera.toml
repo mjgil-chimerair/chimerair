@@ -1,0 +1,29 @@
+# Chimera rustzigv example manifest
+#
+# This example demonstrates compiling the rustzigv Rust workspace through ChimeraIR.
+# rustzigv is a V programming language compiler that combines Zig and Rust.
+#
+# The Rust crates are built as cdylib/staticlib via cargo, then Chimera can
+# ingest them for MLIR compilation and cross-language linking.
+
+version = "0.1.0"
+name = "chimera-rustzigv"
+description = "Compile rustzigv Rust workspace through ChimeraIR"
+
+[chimera]
+version = "0.1.0"
+
+# Point to a local rustzigv checkout before running this example.
+# Chimera will use chimera-rust-cargo to ingest the workspace metadata.
+
+[[sources]]
+path = "../rustzigv/Cargo.toml"
+language = "rust"
+
+[[targets]]
+triple = "x86_64-unknown-linux-gnu"
+features = []
+
+[runtime]
+mode = "std"
+output = "library"

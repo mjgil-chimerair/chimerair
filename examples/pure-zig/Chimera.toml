@@ -1,0 +1,38 @@
+# Pure Zig component example
+#
+# A simple Zig executable that can be built with ChimeraIR.
+
+version = "0.2.0"
+name = "pure-zig-example"
+description = "Pure Zig library with ChimeraIR v0.2 manifest"
+
+[chimera]
+version = "0.1.0"
+
+[[components]]
+id = "zig_math"
+language = "zig"
+kind = "zig-lib"
+roots = ["src/math.zig", "src/algo.zig"]
+
+[components.modules]
+name = "math"
+path = "src/math.zig"
+
+[components.modules]
+name = "algo"
+path = "src/algo.zig"
+
+[[components]]
+id = "zig_cli"
+language = "zig"
+kind = "zig-exe"
+roots = ["src/main.zig"]
+
+[[targets]]
+triple = "x86_64-unknown-linux-gnu"
+features = []
+
+[runtime]
+mode = "std"
+output = "executable"

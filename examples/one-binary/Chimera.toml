@@ -1,0 +1,31 @@
+# Chimera one-binary demo manifest
+version = "0.1.0"
+name = "chimera-one-binary"
+description = "Multi-language demo with C, Rust, and Zig components"
+
+[chimera]
+version = "0.1.0"
+
+[[sources]]
+path = "c-reader/chimera_reader.c"
+language = "c"
+
+[[sources]]
+path = "app_main.c"
+language = "c"
+
+[[sources]]
+path = "rust-config/src/lib.rs"
+language = "rust"
+
+[[sources]]
+path = "zig-checksum/chimera_checksum.zig"
+language = "zig"
+
+[[targets]]
+triple = "x86_64-unknown-linux-gnu"
+features = []
+
+[runtime]
+mode = "std"
+output = "executable"

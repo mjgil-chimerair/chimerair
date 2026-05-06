@@ -1,0 +1,47 @@
+# C → Zig generated-wrapper example
+#
+# Zig code calling into C library via generated wrapper.
+
+version = "0.2.0"
+name = "c-zig-wrapper"
+description = "Zig consuming C library via generated-wrapper mode"
+
+[chimera]
+version = "0.1.0"
+
+[[components]]
+id = "c_backend"
+language = "c"
+kind = "c-source"
+roots = ["src/backend.c", "src/protocol.c"]
+include_dirs = ["include"]
+defines = [{ name = "BACKEND_VERSION", value = "2.0" }]
+exported_symbols = ["backend_init", "backend_process", "backend_shutdown"]
+
+[[components]]
+id = "zig_facade"
+language = "zig"
+kind = "zig-exe"
+roots = ["src/main.zig", "src/backend_wrapper.zig"]
+
+[components.modules]
+name = "backend_wrapper"
+path = "src/backend_wrapper.zig"
+
+[[targets]]
+triple = "x86_64-unknown-linux-gnu"
+features = []
+
+[runtime]
+mode = "std"
+output = "executable"
+
+# ABI edge for generated-wrapper
+[[abi_edges]]
+consumer = "zig_facade"
+provider = "c_backend"
+symbols = ["backend_init", "backend_process", "backend_shutdown"]
+mode = "generated-wrapper"
+wrapper = "zig"
+proof = "required"
+failure_policy = "error"

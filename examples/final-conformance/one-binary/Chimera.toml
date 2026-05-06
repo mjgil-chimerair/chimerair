@@ -1,0 +1,20 @@
+name = "one-binary"
+version = "0.2.0"
+
+[[components]]
+id = "c_lib"
+language = "c"
+kind = "c-source"
+roots = ["src/lib.c"]
+
+[[components]]
+id = "rust_main"
+language = "rust"
+kind = "cargo-package"
+roots = ["src/main.rs"]
+
+[[abi_edges]]
+consumer = "rust_main"
+provider = "c_lib"
+mode = "direct-link"
+symbols = ["c_sum"]

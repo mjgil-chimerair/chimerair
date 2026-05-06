@@ -1,0 +1,28 @@
+# Pure Rust component example
+#
+# A simple Rust library that can be built with ChimeraIR.
+
+version = "0.2.0"
+name = "pure-rust-example"
+description = "Pure Rust library with ChimeraIR v0.2 manifest"
+
+[chimera]
+version = "0.1.0"
+
+[[components]]
+id = "my_lib"
+language = "rust"
+kind = "cargo-package"
+manifest = "Cargo.toml"
+package = "my_lib"
+crate_types = ["staticlib", "rlib"]
+features = ["default"]
+panic_policy = "abort"
+
+[[targets]]
+triple = "x86_64-unknown-linux-gnu"
+features = []
+
+[runtime]
+mode = "std"
+output = "library"

@@ -1,0 +1,35 @@
+# Rust → C direct link example
+#
+# Rust library providing functions called directly from C via static linking.
+
+version = "0.2.0"
+name = "rust-c-direct-link"
+description = "Rust library consumed by C via direct-link mode"
+
+[chimera]
+version = "0.1.0"
+
+[[components]]
+id = "rust_math"
+language = "rust"
+kind = "cargo-package"
+manifest = "Cargo.toml"
+package = "rust_math"
+crate_types = ["staticlib"]
+features = []
+panic_policy = "abort"
+exported_symbols = ["add", "subtract", "multiply", "divide"]
+
+[[components]]
+id = "c_consumer"
+language = "c"
+kind = "c-source"
+roots = ["src/main.c", "src/consumer.c"]
+
+[[targets]]
+triple = "x86_64-unknown-linux-gnu"
+features = []
+
+[runtime]
+mode = "std"
+output = "executable"
