@@ -1,0 +1,3 @@
+# Zig build cache - should not be committed
+.zig-cache/
+.zig-cache*/

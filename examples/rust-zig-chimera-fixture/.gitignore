@@ -1,0 +1,17 @@
+# Rust build artifacts
+rust/target/
+rust/Cargo.lock
+
+# Zig build artifacts
+zig/zig-cache/
+zig/zig-out/
+
+# ChimeraIR artifacts
+*.chimera
+*.chir
+*.zsnap
+*.chmeta
+
+# IDE
+.idea/
+*.swp
