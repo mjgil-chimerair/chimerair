@@ -1,0 +1,15 @@
+[package]
+name = "chimera-zig-to-chimera"
+version = "0.1.0"
+edition = "2021"
+description = "Lower Zig dialect to ChimeraIR"
+
+[dependencies]
+zigmera-dialect = { path = "../zigmera-dialect" }
+chimera-meta = { path = "../chimera-meta" }
+chimera-object = { path = "../chimera-object" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+tempfile = "3.8"

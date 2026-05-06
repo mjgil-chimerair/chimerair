@@ -1,0 +1,25 @@
+[package]
+name = "chimera-rust-source"
+version = "0.1.0"
+edition = "2021"
+description = "Stable Rust source/surface parser using syn for repr(C), extern blocks, and FFI validation"
+
+[dependencies]
+chimera-rust-schema = { path = "../chimera-rust-schema" }
+chimera-diagnostics = { path = "../chimera-diagnostics" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+syn = { version = "2.0", features = ["full", "derive"] }
+proc-macro2 = "1.0"
+quote = "1.0"
+regex = "1.10"
+
+[dev-dependencies]
+tempfile = "3.8"
+quickcheck = "1.0"
+
+[features]
+default = ["std"]
+std = []
+stable-surface = ["syn/parsing"]

@@ -1,0 +1,36 @@
+[package]
+name = "chimera-rustc-driver"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Optional nightly rustc semantic extraction sidecar"
+
+[features]
+default = ["stable-surface-only"]
+stable-surface-only = []
+rustc-private = []
+nightly-rustc = ["rustc-private"]
+syn = ["syn?/full", "syn?/parsing", "syn?/extra-traits"]
+semantic-extraction = ["nightly-rustc", "syn"]
+
+[[bin]]
+name = "chimera-rustc-driver"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+blake3 = "1.5"
+chimera-rust-schema = { path = "../chimera-rust-schema" }
+syn = { version = "2.0", features = ["full", "parsing", "extra-traits"], optional = true }
+
+[dev-dependencies]
+serde_json = "1.0"
+syn = { version = "2.0", features = ["full", "parsing", "extra-traits"] }
+
+[package.metadata]
+# rustc-private toolchain requirements
+rustc-private-version = "nightly-2026-05-01"
+rustc-private-components = ["rustc-dev", "llvm-tools"]

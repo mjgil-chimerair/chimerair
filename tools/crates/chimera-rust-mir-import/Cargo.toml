@@ -1,0 +1,17 @@
+[package]
+name = "chimera-rust-mir-import"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "MIR package importer for parsing .rmirpack files"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+blake3 = "1.5"
+chimera-rust-schema = { path = "../chimera-rust-schema" }
+
+[dev-dependencies]
+ tempfile = "3.8"

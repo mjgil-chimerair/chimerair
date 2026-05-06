@@ -1,0 +1,18 @@
+[package]
+name = "chimera-rust-to-chimera"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Lower Rust dialect to ChimeraIR"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+chimera-rust-dialect = { path = "../chimera-rust-dialect" }
+chimera-rust-schema = { path = "../chimera-rust-schema" }
+chimera-rust-mir-import = { path = "../chimera-rust-mir-import" }
+chimera-rust-layout = { path = "../chimera-rust-layout" }
+chimera-meta = { path = "../chimera-meta" }
+chimera-object = { path = "../chimera-object" }

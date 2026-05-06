@@ -1,0 +1,18 @@
+[package]
+name = "chimera-wrappergen"
+version = "0.1.0"
+edition = "2021"
+description = "Chimera wrapper generation for C, Rust, and Zig"
+
+[dependencies]
+chimera-meta = { path = "../chimera-meta" }
+chimera-object = { path = "../chimera-object" }
+chimera-diagnostics = { path = "../chimera-diagnostics" }
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+log = "0.4"
+
+[dev-dependencies]
+tempfile = "3.8"
