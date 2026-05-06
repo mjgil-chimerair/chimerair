@@ -1,0 +1,15 @@
+[package]
+name = "zigmera-target"
+version = "0.1.0"
+edition = "2021"
+description = "Zigmera target triple, CPU, ABI, pointer width, and cross-target compatibility"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
+
+[dev-dependencies]
+
+[features]
+default = ["std"]
+std = []

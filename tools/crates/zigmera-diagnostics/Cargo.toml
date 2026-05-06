@@ -1,0 +1,17 @@
+[package]
+name = "zigmera-diagnostics"
+version = "0.1.0"
+edition = "2021"
+description = "Zigmera diagnostic codes for hook, schema parse, graph, invalidation, cache, lowering, proof, CLI"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+codespan-reporting = "0.12"
+
+[dev-dependencies]
+
+[features]
+default = ["std"]
+std = []

@@ -1,0 +1,19 @@
+[package]
+name = "zigmera-dialect"
+version = "0.1.0"
+edition = "2021"
+description = "Zig dialect for AIR-to-dialect lowering with semantic verification"
+
+[dependencies]
+zigmera-schema = { path = "../zigmera-schema" }
+zigmera-hash = { path = "../zigmera-hash" }
+zigmera-diagnostics = { path = "../zigmera-diagnostics" }
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1.0"
+
+[dev-dependencies]
+tempfile = "3.8"
+
+[features]
+default = ["std"]
+std = []
