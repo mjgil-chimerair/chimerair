@@ -1,0 +1,39 @@
+{
+  "module_name": "chimera-demo",
+  "target_triple": "x86_64-unknown-linux-gnu",
+  "verified": true,
+  "obligations": [
+    {
+      "id": "layout_001",
+      "kind": "layout",
+      "function": "read_buffer",
+      "description": "struct ch_buffer layout must match C header",
+      "status": "verified"
+    },
+    {
+      "id": "ownership_001",
+      "kind": "ownership",
+      "function": "parse_config",
+      "description": "config parser must not leak ownership",
+      "status": "verified"
+    },
+    {
+      "id": "panic_001",
+      "kind": "panic",
+      "function": "calculate_checksum",
+      "description": "checksum must not unwind",
+      "status": "verified"
+    }
+  ],
+  "assumptions": [
+    {
+      "kind": "c_contract",
+      "description": "C stdio.h functions maintain valid pointers"
+    },
+    {
+      "kind": "compiler_assumption",
+      "description": "LLVM layout computation matches source"
+    }
+  ],
+  "timestamp": "2026-05-06T12:00:00Z"
+}
