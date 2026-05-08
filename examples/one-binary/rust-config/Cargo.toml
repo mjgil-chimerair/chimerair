@@ -1,0 +1,16 @@
+[package]
+name = "chimera-config-parser"
+version = "0.1.0"
+edition = "2021"
+description = "Chimera config parser example component"
+
+[[bin]]
+name = "chimera_config_parser"
+path = "src/main.rs"
+
+[dependencies]
+libc = "0.2"
+
+[features]
+default = []
+no_std = []
