@@ -1,0 +1,17 @@
+.lake/
+*.olean
+*.ilean
+*.c
+*.bc
+build/
+target/
+*.o
+*.a
+*.so
+*.dylib
+.zig-cache/
+.zig-cache*/
+.zigmera/
+tools/.zigmera/
+.tmp-*/
+repomix-output.xml
