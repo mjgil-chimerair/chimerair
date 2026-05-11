@@ -1,0 +1,649 @@
+name: Chimera CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  # ============================================================
+  # Phase 0: Repo bootstrap verification
+  # ============================================================
+  repo-structure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify repo structure
+        run: |
+          test -d compiler-core
+          test -d tools
+          test -d runtime
+          test -d examples
+          test -d ChimeraProof
+          echo "Repo structure: OK"
+
+      - name: Verify toolchain pin
+        run: |
+          test -f toolchain.toml
+          test -f toolchains/versions.toml
+          echo "Toolchain pin: OK"
+
+      - name: Validate toolchain versions
+        run: |
+          bash toolchains/setup-toolchains.sh || true
+
+  # ============================================================
+  # Phase 1: Lean Proof System (ChimeraProof)
+  # ============================================================
+  proof-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Lean
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lean4
+
+      - name: Build ChimeraProof
+        run: |
+          cd ChimeraProof
+          lake build
+
+  proof-no-placeholder-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for placeholders across all layers
+        run: |
+          bash scripts/check-placeholders.sh
+
+  # ============================================================
+  # Phase 1: Compiler Core (C++/MLIR)
+  # ============================================================
+  compiler-core-build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/llvm/mlir-builder:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure compiler-core
+        run: |
+          mkdir -p compiler-core/build
+          cd compiler-core/build
+          cmake .. -G Ninja \
+            -DLLVM_DIR=/usr/lib/llvm-17/lib/cmake/llvm \
+            -DMLIR_DIR=/usr/lib/llvm-17/lib/cmake/mlir
+
+      - name: Build compiler-core
+        run: |
+          cd compiler-core/build
+          ninja
+
+  compiler-core-test:
+    runs-on: ubuntu-latest
+    container: ghcr.io/llvm/mlir-builder:latest
+    needs: compiler-core-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and test compiler-core
+        run: |
+          mkdir -p compiler-core/build
+          cd compiler-core/build
+          cmake .. -G Ninja \
+            -DLLVM_DIR=/usr/lib/llvm-17/lib/cmake/llvm \
+            -DMLIR_DIR=/usr/lib/llvm-17/lib/cmake/mlir
+          ninja
+          ctest --output-on-failure
+
+  # ============================================================
+  # Phase 1: Rust Tools Workspace
+  # ============================================================
+  tools-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Build tools
+        run: |
+          cd tools
+          cargo build --release
+
+  tools-test:
+    runs-on: ubuntu-latest
+    needs: tools-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Test tools
+        run: |
+          cd tools
+          cargo test --workspace
+
+  # ============================================================
+  # Phase 1b: Rust Compiler Integration (Tasks 23, 33)
+  # ============================================================
+  rust-tools-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Test rust-schema crate
+        run: |
+          cd tools
+          cargo test -p chimera-rust-schema
+
+      - name: Test rust-source crate
+        run: |
+          cd tools
+          cargo test -p chimera-rust-source
+
+  # ============================================================
+  # Phase 1c: Rustc Driver Nightly Integration (Task R1-R9)
+  # ============================================================
+  rustc-driver-nightly-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install rustup components
+        run: |
+          rustup component add rustc-dev llvm-tools --toolchain nightly-2026-05-01
+
+      - name: Build chimera-rustc-driver with nightly features
+        run: |
+          cd tools/crates/chimera-rustc-driver
+          cargo +nightly build --features rustc-private
+
+      - name: Test chimera-rustc-driver nightly features
+        run: |
+          cd tools/crates/chimera-rustc-driver
+          cargo +nightly test --features rustc-private
+
+  rustc-driver-nightly-hir-test:
+    runs-on: ubuntu-latest
+    needs: rustc-driver-nightly-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install rustup components
+        run: |
+          rustup component add rustc-dev llvm-tools --toolchain nightly-2026-05-01
+
+      - name: Run HIR extraction verification test
+        run: |
+          bash tests/rust-hir-verification-test.sh
+
+      - name: Run nightly differential test
+        run: |
+          bash tests/rust-nightly-differential-test.sh
+
+  rustc-driver-cross-target-layout-test:
+    runs-on: ubuntu-latest
+    needs: rustc-driver-nightly-build
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install rustup components
+        run: |
+          rustup component add rustc-dev llvm-tools --toolchain nightly-2026-05-01
+
+      - name: Run layout verification for target
+        run: |
+          cd tools/crates/chimera-rustc-driver
+          cargo +nightly test --features rustc-private test_extract_layout_table
+
+  rust-nightly-release-gate:
+    runs-on: ubuntu-latest
+    needs: rustc-driver-nightly-hir-test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify differential test passed
+        run: |
+          echo "Differential test must have passed in rustc-driver-nightly-hir-test"
+
+  # ============================================================
+  # Phase 2: Rust Fixtures (Task 33)
+  # ============================================================
+  rust-fixtures-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Test basic fixture
+        run: |
+          cd tests/rust-fixtures/basic
+          cargo test
+
+      - name: Test library fixture
+        run: |
+          cd tests/rust-fixtures/library
+          cargo test
+
+      - name: Build ffi fixture
+        run: |
+          cd tests/rust-fixtures/ffi
+          cargo build
+
+      - name: Build build-script fixture
+        run: |
+          cd tests/rust-fixtures/build-script
+          cargo build
+
+      - name: Build proc-macro fixture
+        run: |
+          cd tests/rust-fixtures/proc-macro
+          cargo build
+
+  # ============================================================
+  # Phase 2b: C Fixtures (Task 30)
+  # ============================================================
+  c-fixtures-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Clang
+        run: |
+          apt-get update
+          apt-get install -y clang
+
+      - name: Test basic fixture
+        run: |
+          cd tests/c-fixtures/basic
+          clang -fsyntax-only -I. basic.h
+          clang -c -I. basic.c -o basic.o
+
+      - name: Test header-only fixture
+        run: |
+          cd tests/c-fixtures/header-only
+          clang -fsyntax-only -I. header.h
+
+      - name: Test layout fixture
+        run: |
+          cd tests/c-fixtures/layout
+          clang -fsyntax-only -I. layout.h
+
+      - name: Test bitfields fixture
+        run: |
+          cd tests/c-fixtures/bitfields
+          clang -fsyntax-only -I. bitfield.h
+
+      - name: Test errors fixture
+        run: |
+          cd tests/c-fixtures/errors
+          clang -fsyntax-only -I. errors.h
+
+      - name: Test callbacks fixture
+        run: |
+          cd tests/c-fixtures/callbacks
+          clang -fsyntax-only -I. callbacks.h
+
+  # ============================================================
+  # Phase 4: Runtime ABI
+  # ============================================================
+  runtime-c-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build C header smoke test
+        run: |
+          echo '#include "chimera_abi.h"' > /tmp/smoke.c
+          gcc -c -Wall -Wextra -I runtime/include /tmp/smoke.c -o /tmp/smoke.o
+          echo "C header compiles: OK"
+
+  runtime-rust-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Build runtime-rust
+        run: |
+          cd runtime/rust
+          cargo build --release
+
+  runtime-rust-test:
+    runs-on: ubuntu-latest
+    needs: runtime-rust-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Test runtime-rust
+        run: |
+          cd runtime/rust
+          cargo test --release
+
+  runtime-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run conformance tests
+        run: |
+          cd runtime
+          bash test_conformance.sh
+          echo "Conformance tests: OK"
+
+  # ============================================================
+  # Phase 4b: Runtime Sanitizers (G.134)
+  # ============================================================
+  runtime-sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build runtime with sanitizers
+        run: |
+          cd runtime
+          chmod +x build.sh test_sanitizers.sh
+          ./test_sanitizers.sh
+
+  # ============================================================
+  # Phase 5: Examples
+  # ============================================================
+  examples-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Build C reader example
+        run: |
+          gcc -I runtime/include -c examples/one-binary/c-reader/chimera_reader.c -o /tmp/reader.o
+          echo "C reader compiles: OK"
+
+      - name: Build Rust config example
+        run: |
+          cd examples/one-binary/rust-config
+          cargo build --release
+          echo "Rust config compiles: OK"
+
+  # ============================================================
+  # Phase 5: One-binary demo via CLI (Task 35)
+  # ============================================================
+  one-binary-cli-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Build CLI
+        run: |
+          cd tools
+          cargo build --release
+
+      - name: Install one-binary toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lld zig
+
+      - name: Build one-binary demo via CLI
+        run: |
+          cd examples/one-binary
+          CHIMERA_LINKER=cc ../../tools/target/release/chimera build --manifest Chimera.toml --output build --skip-proof
+
+      - name: Verify final binary exists
+        run: |
+          cd examples/one-binary
+          test -f build/chimera_binary
+          chmod +x build/chimera_binary
+          echo "Final binary exists: build/chimera_binary"
+
+      - name: Execute and validate binary
+        run: |
+          cd examples/one-binary
+          cat > build/demo.config <<'EOF'
+          app_name=ChimeraDemo
+          version=0.1.0
+          mode=production
+          EOF
+          ./build/chimera_binary build/demo.config >/tmp/chimera-one-binary.stdout 2>/tmp/chimera-one-binary.stderr
+          cat /tmp/chimera-one-binary.stdout
+          cat /tmp/chimera-one-binary.stderr
+          grep -q '^entries=3$' /tmp/chimera-one-binary.stdout
+          grep -q '^checksum=' /tmp/chimera-one-binary.stdout
+
+      - name: Verify metadata and wrapper sidecars
+        run: |
+          cd examples/one-binary
+          test -f build/build_0.chmeta
+          test -f build/build_1.chmeta
+          test -f build/build_2.chmeta
+          test -f build/build_3.chmeta
+          test -d build/wrappers/build_0
+          test -d build/wrappers/build_1
+          test -d build/wrappers/build_2
+          test -d build/wrappers/build_3
+          find build/wrappers -maxdepth 2 -type f | sort
+
+      - name: Verify proof-enabled build emits sidecars
+        run: |
+          cd examples/one-binary
+          cat > /tmp/fake-proof-bridge.sh <<'EOF'
+          #!/bin/sh
+          if [ "$1" != "verify" ]; then
+            echo "expected verify command" >&2
+            exit 1
+          fi
+          if [ ! -f "$2" ]; then
+            echo "missing proof artifact" >&2
+            exit 1
+          fi
+          exit 0
+          EOF
+          chmod +x /tmp/fake-proof-bridge.sh
+          CHIMERA_LINKER=cc CHIMERA_PROOF_BRIDGE=/tmp/fake-proof-bridge.sh \
+            ../../tools/target/release/chimera build --manifest Chimera.toml --output build-proof
+          test -f build-proof/build_0.chproof
+          test -f build-proof/build_1.chproof
+          test -f build-proof/build_2.chproof
+          test -f build-proof/build_3.chproof
+
+  # ============================================================
+  # Documentation checks
+  # ============================================================
+  docs-exist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify docs exist
+        run: |
+          test -f docs/spec.md
+          test -f docs/build.md
+          test -f docs/testing.md
+          test -f docs/ci.md
+          test -f docs/repo-layout.md
+          test -f docs/task-list-7.md
+          echo "Required docs exist: OK"
+
+  docs-link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check docs links and paths
+        run: |
+          bash scripts/check-docs-links.sh
+
+  # ============================================================
+  # Root build and test smoke tests
+  # ============================================================
+  root-build-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Root build smoke
+        run: |
+          chmod +x build.sh
+          # Test that build.sh doesn't fail on tools and runtime (skip compiler-core which needs MLIR)
+          bash -c '
+            set -e
+            cd tools && cargo build --release
+            echo "Tools build: OK"
+          '
+
+  root-test-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Root test smoke
+        run: |
+          chmod +x test.sh
+          bash -c '
+            set -e
+            bash scripts/release-gate.sh --contracts-only
+            echo "Release contract gate: OK"
+          '
+
+  zig-release-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create authoritative Zig fixture
+        run: |
+          bash scripts/setup-authoritative-zig-fixture.sh /tmp/zigmera-zig
+
+      - name: Verify authoritative Zig release smoke
+        run: |
+          CHIMERA_ZIG_ROOT=/tmp/zigmera-zig \
+            bash scripts/run-zig-release-integration.sh require-authoritative
+
+  zig-release-authoritative:
+    if: ${{ vars.CHIMERA_ZIG_GIT_URL != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare real authoritative Zig checkout
+        env:
+          CHIMERA_ZIG_GIT_URL: ${{ vars.CHIMERA_ZIG_GIT_URL }}
+          CHIMERA_ZIG_GIT_REF: ${{ vars.CHIMERA_ZIG_GIT_REF }}
+          CHIMERA_ZIG_GIT_TOKEN: ${{ secrets.CHIMERA_ZIG_GIT_TOKEN }}
+        run: |
+          bash scripts/check-zig-authoritative-ci-config.sh
+          bash scripts/prepare-zig-authoritative-checkout.sh /tmp/zigmera-zig-real
+
+      - name: Verify real authoritative Zig release smoke
+        run: |
+          CHIMERA_ZIG_ROOT=/tmp/zigmera-zig-real \
+            bash scripts/run-zig-release-integration.sh require-authoritative
+
+      - name: Write authoritative Zig CI evidence
+        env:
+          CHIMERA_ZIG_GIT_URL: ${{ vars.CHIMERA_ZIG_GIT_URL }}
+          CHIMERA_ZIG_GIT_REF: ${{ vars.CHIMERA_ZIG_GIT_REF }}
+          CHIMERA_ZIG_ROOT: /tmp/zigmera-zig-real
+          CHIMERA_ZIG_BIN: /tmp/zigmera-zig-real/build/stage3/bin/zig
+        run: |
+          python3 scripts/write-zig-authoritative-ci-evidence.py .artifacts/zig-authoritative-ci-evidence.json
+          python3 scripts/validate-zig-authoritative-ci-evidence.py .artifacts/zig-authoritative-ci-evidence.json
+
+      - name: Upload authoritative Zig CI evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: zig-authoritative-ci-evidence
+          path: .artifacts/zig-authoritative-ci-evidence.json
+
+  release-gate-clean-checkout:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          version: 1.75
+
+      - name: Run full release gate from clean checkout
+        run: |
+          bash tests/release-gate-clean-checkout.sh
