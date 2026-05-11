@@ -1,0 +1,53 @@
+name = "ChimeraProof"
+version = "0.1.0"
+
+[[lean_lib]]
+name = "Chimera.Foundation"
+
+[[lean_lib]]
+name = "Chimera.ABI"
+
+[[lean_lib]]
+name = "Chimera.Memory"
+
+[[lean_lib]]
+name = "Chimera.Error"
+
+[[lean_lib]]
+name = "Chimera.Effects"
+
+[[lean_lib]]
+name = "Chimera.IR"
+
+[[lean_lib]]
+name = "Chimera.Link"
+
+[[lean_lib]]
+name = "Chimera.Checkers"
+
+[[lean_lib]]
+name = "Chimera.Wrapper"
+
+[[lean_lib]]
+name = "Chimera.Metadata"
+
+[[lean_lib]]
+name = "Chimera.Runtime"
+
+[[lean_lib]]
+name = "Chimera.ZigAdapter"
+
+[[lean_lib]]
+name = "Chimera.CAdapter"
+
+[[lean_lib]]
+name = "RustAdapter"
+
+[[lean_lib]]
+name = "Chimera.Examples"
+
+[[lean_lib]]
+name = "Chimera.Tests"
+
+[[lean_lib]]
+name = "Chimera.Theorems"
