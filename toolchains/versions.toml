@@ -1,0 +1,46 @@
+# Chimera Toolchain Manifests
+#
+# Pinned toolchain versions for reproducible builds.
+# These versions must match toolchain.toml at repo root.
+
+[lean]
+version = "4.29.1"
+lake_version = "5.0.0"
+url = "https://github.com/leanprover/lean4/releases/download/v4.29.1/lean4-linux-x86_64.tar.gz"
+
+[llvm]
+version = "17.0.6"
+mlir_version = "17.0.6"
+url = "https://apt.llvm.org/llvm-toolchain-pool-17"
+packages = ["llvm-17-dev", "libmlir-17-dev", "lld-17", "clang-17"]
+
+[gcc]
+version = "11.4.0"
+url = "https://gcc.gnu.org/"
+triple = "x86_64-linux-gnu"
+
+[rust]
+version = "1.75.0"
+rustup_version = "1.27.0"
+url = "https://sh.rustup.rs"
+targets = ["x86_64-unknown-linux-gnu", "wasm32-wasi"]
+
+[zig]
+version = "0.13.0"
+url = "https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz"
+
+[cmake]
+version = "3.28.1"
+url = "https://cmake.org/download/"
+
+[ninja]
+version = "1.11.1"
+url = "https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-linux.zip"
+
+[platforms]
+linux_x86_64 = "x86_64-unknown-linux-gnu"
+linux_aarch64 = "aarch64-unknown-linux-gnu"
+macos_x86_64 = "x86_64-apple-darwin"
+macos_aarch64 = "aarch64-apple-darwin"
+windows_x86_64 = "x86_64-pc-windows-gnu"
+wasm32 = "wasm32-unknown-unknown"
