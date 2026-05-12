@@ -1,0 +1,11 @@
+[package]
+name = "helper-crate"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+std = []
+nightly = []
+
+[dependencies]

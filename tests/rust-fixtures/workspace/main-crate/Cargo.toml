@@ -1,0 +1,8 @@
+[package]
+name = "main-crate"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+helper-crate = { path = "../helper-crate", default-features = false }
+macro-crate = { path = "../macro-crate" }
