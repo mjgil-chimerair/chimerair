@@ -1,0 +1,31 @@
+{
+  "build_id": "chimera-export",
+  "timestamp": 1778190256,
+  "target_triple": "x86_64-unknown-linux-gnu",
+  "target_ptr_width": 64,
+  "target_endian": "little",
+  "obligations": [
+    {
+      "id": "sig_0",
+      "kind": "signature",
+      "target": "add",
+      "description": "Function signature check for add",
+      "assumptions": ["param_0 : i32", "param_1 : i32"]
+    },
+    {
+      "id": "result_1",
+      "kind": "result",
+      "target": "add",
+      "description": "Result/panic policy check for add",
+      "assumptions": []
+    },
+    {
+      "id": "owner_3",
+      "kind": "ownership",
+      "target": "might_fail",
+      "description": "Ownership check for might_fail",
+      "assumptions": ["No aliased mutable references"]
+    }
+  ],
+  "trust_assumptions": []
+}

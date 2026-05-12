@@ -1,0 +1,7 @@
+[
+  {
+    "directory": ".",
+    "file": "basic.c",
+    "command": "gcc -c -I. basic.c -o basic.o"
+  }
+]

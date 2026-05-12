@@ -1,0 +1,4 @@
+# Build script configuration
+# This file is read by build.rs and affects compilation
+
+debug

@@ -1,0 +1,52 @@
+# Rust+Zig Mixed-Language Conformance Fixture
+# Task 48: Product-style conformance fixture for unified lowering
+version = "0.1.0"
+name = "rust-zig-conformance"
+description = "Product-style Rust+Zig mixed-language conformance fixture for unified lowering"
+
+[chimera]
+version = "0.1.0"
+
+# Build mode: unified lowering (the default, but explicit here for clarity)
+[build]
+mode = "unified"
+
+# Rust library component - exports math functions with C ABI
+[[components]]
+id = "rust_math"
+language = "rust"
+kind = "cargo-package"
+roots = ["src/lib.rs"]
+
+# Zig library component - imports Rust functions and exports wrappers
+[[components]]
+id = "zig_wrapper"
+language = "zig"
+kind = "zig-package"
+roots = ["src/main.zig"]
+
+# ABI edges: Zig imports from Rust
+[[abi_edges]]
+consumer = "zig_wrapper"
+provider = "rust_math"
+mode = "unified"
+symbols = [
+    "rust_add",
+    "rust_subtract",
+    "rust_multiply",
+    "rust_divide",
+    "rust_max",
+    "rust_min",
+    "rust_negate",
+    "rust_is_zero"
+]
+
+# Target specification
+[[targets]]
+triple = "x86_64-unknown-linux-gnu"
+features = []
+
+# Runtime settings
+[runtime]
+mode = "std"
+output = "executable"
