@@ -1,0 +1,28 @@
+# Chimera Toolchain Pin File
+# All toolchains must match these versions for reproducible builds
+
+[llvm]
+version = "17.0.1"
+mlir = "17.0.1"
+
+[lean]
+version = "4.29.1"
+elan_channel = "stable"
+
+[rust]
+version = "1.75.0"
+edition = "2021"
+
+[zig]
+version = "0.12.0"
+
+[c]
+c_standard = "C17"
+
+[platforms]
+linux_x86_64 = "x86_64-unknown-linux-gnu"
+linux_aarch64 = "aarch64-unknown-linux-gnu"
+macos_x86_64 = "x86_64-apple-darwin"
+macos_aarch64 = "aarch64-apple-darwin"
+windows_x86_64 = "x86_64-pc-windows-gnu"
+wasm32 = "wasm32-unknown-unknown"
