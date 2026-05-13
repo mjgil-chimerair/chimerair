@@ -1,0 +1,37 @@
+[abi]
+version = "0.1.0"
+major = 0
+minor = 1
+patch = 0
+
+[proof]
+min_lean_version = "4.29.1"
+
+[compiler]
+min_llvm_version = "17.0.0"
+min_cmake_version = "3.25"
+
+[runtime]
+min_rust_version = "1.75.0"
+min_zig_version = "0.12.0"
+
+[zig_integration]
+min_zig_version = "0.13.0"
+recommended_zig_commit = "zigmera/snapshot-v1"
+
+[artifacts]
+zsnap_schema_version = "1.0"
+zdep_schema_version = "1.0"
+zairpack_schema_version = "1.0"
+zchmeta_schema_version = "1.0"
+zchproof_schema_version = "1.0"
+cho_schema_version = "1.0"
+
+[compat]
+# Cross-repo compatibility policy
+# When upgrading versions, all downstream repos must update
+compatible_versions = [
+  "0.1.0",
+  "0.1.1",
+  "0.2.0"
+]
