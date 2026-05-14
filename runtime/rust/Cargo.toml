@@ -1,0 +1,27 @@
+[package]
+name = "chimera-rt"
+version = "0.1.0"
+edition = "2021"
+description = "Chimera runtime ABI support for Rust"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+libc = { version = "0.2", optional = true }
+
+[features]
+default = ["std"]
+# Core runtime - minimal types, no standard library
+core = []
+# Standard runtime - full standard library (default)
+std = ["dep:libc"]
+# No standard library - embedded/targets without stdlib
+no_std = ["no_builtins"]
+no_builtins = []
+# Allocator support - enables allocator/drop helpers
+alloc = ["std"]
+# Actor runtime features for concurrent components
+actor = []
+
+[profile.release]
+opt-level = 3
+lto = true
