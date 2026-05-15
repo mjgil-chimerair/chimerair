@@ -1,0 +1,5 @@
+# C Performance Baseline - 2026-05-07T23:45:32Z
+clang_extraction_ms: 159
+header_compilation_ms: 253
+fixture_count: 11
+total_headers: 11
