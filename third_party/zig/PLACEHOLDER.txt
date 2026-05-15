@@ -1,0 +1,10 @@
+# Placeholder for patched Zig compiler fork
+
+This is a placeholder indicating that the patched Zig compiler fork
+should be checked out here when doing integration testing.
+
+To set up:
+  git submodule add https://github.com/zigmera/zig.git .
+  git checkout zigmera/snapshot-v1
+
+See docs/zig-compiler-fork.md for details.
