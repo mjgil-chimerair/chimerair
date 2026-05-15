@@ -1,0 +1,3 @@
+// RUN: chimera-opt --help 2>&1 | FileCheck %s
+
+// CHECK: Available passes:

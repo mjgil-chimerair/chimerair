@@ -1,0 +1,3 @@
+// RUN: chimerac --help 2>&1 | FileCheck %s
+
+// CHECK: Chimera compiler driver

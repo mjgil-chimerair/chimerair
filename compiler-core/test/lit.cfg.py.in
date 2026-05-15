@@ -1,0 +1,22 @@
+# -*- Python -*-
+import lit.formats
+import lit.util
+import os
+import platform
+
+config.llvm_src_root = "@LLVM_SOURCE_DIR@"
+config.llvm_obj_root = "@LLVM_BINARY_DIR@"
+config.llvm_tools_dir = "@LLVM_TOOLS_DIR@"
+config.llvm_lib_dir = "@LLVM_LIBRARY_DIR@"
+config.llvm_shlib_dir = "@SHLIB_DIR@"
+
+config.test_exec_root = "@CMAKE_BINARY_DIR@/test"
+config.test_source_root = "@CMAKE_CURRENT_SOURCE_DIR@"
+config.project_root = "@CMAKE_SOURCE_DIR@"
+
+config.test_format = lit.formats.ShTest(True)
+config.test_substitutions = []
+config.target_triple = "@TARGET_TRIPLE@"
+
+path = os.path.pathsep.join([config.llvm_tools_dir, config.llvm_lib_dir, os.environ.get("PATH", "")])
+os.environ["PATH"] = path

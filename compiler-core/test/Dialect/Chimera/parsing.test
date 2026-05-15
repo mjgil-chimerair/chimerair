@@ -1,0 +1,7 @@
+// RUN: chimera-opt %s 2>&1 | FileCheck %s
+
+// CHECK-LABEL: module
+module() {
+  // CHECK: func @test()
+  func @test() : () -> ()
+}
