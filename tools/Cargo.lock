@@ -712,6 +712,7 @@ dependencies = [
  "chimera-component",
  "regex",
  "serde",
+ "serde_json",
  "similar",
  "toml",
 ]
