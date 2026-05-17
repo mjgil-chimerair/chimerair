@@ -144,7 +144,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Build tools
         run: |
@@ -161,7 +161,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Test tools
         run: |
@@ -180,7 +180,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Test rust-schema crate
         run: |
@@ -276,7 +276,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Test basic fixture
         run: |
@@ -375,7 +375,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Build runtime-rust
         run: |
@@ -392,7 +392,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Test runtime-rust
         run: |
@@ -438,7 +438,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Build C reader example
         run: |
@@ -463,7 +463,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Build CLI
         run: |
@@ -578,7 +578,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Root build smoke
         run: |
@@ -599,7 +599,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Root test smoke
         run: |
@@ -671,7 +671,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.75.0
+          toolchain: stable
 
       - name: Install Lean
         run: |

@@ -34,7 +34,7 @@ file(READ "${METADATA}" METADATA_CONTENTS)
 file(READ "${PROOF}" PROOF_CONTENTS)
 file(READ "${OBJECT}" OBJECT_CONTENTS HEX)
 
-if(NOT METADATA_CONTENTS MATCHES "\"source_lang\": \"rust\"")
+if(NOT METADATA_CONTENTS MATCHES "\"source_lang\": \"chimera\"")
   message(FATAL_ERROR "Metadata sidecar is missing the expected source_lang field.")
 endif()
 
