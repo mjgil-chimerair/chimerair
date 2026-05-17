@@ -20,6 +20,12 @@ run python3 scripts/validate-proof-report.py \
   tests/fixtures/proof-sidecar.chproof.json
 run bash scripts/check-placeholders.sh
 run bash scripts/check-docs-links.sh
+
+if [[ "$MODE" == "--contracts-only" || "$MODE" == "contracts-only" ]]; then
+  echo "Release gate contract checks passed."
+  exit 0
+fi
+
 run bash scripts/run-zig-release-integration.sh allow-missing
 run bash tests/proof-report-validation.sh
 run bash tests/zig-release-integration.sh
@@ -35,11 +41,6 @@ run cargo test --manifest-path tools/crates/zigmera-hash/Cargo.toml --quiet
 run cargo test --manifest-path tools/crates/chimera-adapter-zig/Cargo.toml --quiet
 run cargo test --manifest-path tools/crates/chimera-cli/Cargo.toml --quiet test_cli_explain_cache
 run bash -lc 'cd ChimeraProof && lake build Chimera.ZigAdapter.ProofInput'
-
-if [[ "$MODE" == "--contracts-only" || "$MODE" == "contracts-only" ]]; then
-  echo "Release gate contract checks passed."
-  exit 0
-fi
 
 run bash scripts/run-zig-release-integration.sh require-authoritative
 run env CHIMERA_SKIP_NESTED_CARGO_TESTS=1 cargo test --workspace --quiet --manifest-path tools/Cargo.toml

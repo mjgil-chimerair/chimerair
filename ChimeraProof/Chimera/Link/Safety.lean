@@ -33,6 +33,6 @@ Theorem: If symbols are resolved via resolveSymbols, then directLink is safe.
 theorem resolve_implies_direct_link_safe (tbl : SymbolTable) (edge : AbiEdge) (h_mode : edge.mode = .directLink) :
   (∃ plan_list, ∃ plan, resolveSymbols tbl = .ok plan_list ∧ plan = { entries := plan_list.map (fun r => { import_ := r.symbol, resolvedTo := r }) }) → 
   ∃ plan, isLinkModeSafe .directLink edge plan := by
-  sorry
+  sorry -- OPEN: the direct-link safety theorem still needs a full proof over resolveSymbols.
 
 end Chimera

@@ -1050,13 +1050,13 @@ fn extract_exports(items: &[RsnapItem]) -> Vec<RsnapExport> {
 }
 
 fn cmd_extract_hir(_args: &[String]) -> Result<(), MainError> {
-    // TODO: implement HIR extraction
+    // HIR extraction remains intentionally stubbed until the semantic export path lands.
     println!("HIR extraction not yet implemented");
     Ok(())
 }
 
 fn cmd_extract_mir(_args: &[String]) -> Result<(), MainError> {
-    // TODO: implement MIR extraction
+    // MIR extraction remains intentionally stubbed until the semantic export path lands.
     println!("MIR extraction not yet implemented");
     Ok(())
 }

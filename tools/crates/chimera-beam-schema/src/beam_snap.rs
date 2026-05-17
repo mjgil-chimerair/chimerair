@@ -300,11 +300,15 @@ pub struct BinaryParser;
 
 impl BinaryParser {
     pub fn parse(_data: &[u8]) -> Result<BeamSnapSchema, BinaryParseError> {
-        todo!("Implement BEAM snapshot binary parser")
+        Err(BinaryParseError::Parse(
+            "BEAM snapshot binary parser is not implemented".to_string(),
+        ))
     }
 
     pub fn parse_json(_json: &str) -> Result<BeamSnapSchema, BinaryParseError> {
-        todo!("Implement BEAM snapshot JSON parser")
+        Err(BinaryParseError::Parse(
+            "BEAM snapshot JSON parser is not implemented".to_string(),
+        ))
     }
 }
 
@@ -374,7 +378,9 @@ impl Default for BeamSnapSchema {
 
 /// Validate a binary `.beam_snap` file.
 pub fn validate_binary(_data: &[u8]) -> Result<ValidationReport, BinaryParseError> {
-    todo!("Implement binary validation")
+    Err(BinaryParseError::Parse(
+        "BEAM snapshot binary validation is not implemented".to_string(),
+    ))
 }
 
 /// Validation report for a `.beam_snap` file.

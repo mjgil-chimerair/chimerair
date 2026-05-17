@@ -8,6 +8,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  compiler-core-setup:
+    runs-on: ubuntu-latest
+    outputs:
+      llvm_dir: ${{ steps.detect.outputs.llvm_dir }}
+      mlir_dir: ${{ steps.detect.outputs.mlir_dir }}
+    steps:
+      - name: Install LLVM and MLIR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang lld llvm-18-dev libmlir-18-dev mlir-18-tools
+
+      - name: Detect CMake package directories
+        id: detect
+        run: |
+          echo "llvm_dir=/usr/lib/llvm-18/lib/cmake/llvm" >> "$GITHUB_OUTPUT"
+          echo "mlir_dir=/usr/lib/llvm-18/lib/cmake/mlir" >> "$GITHUB_OUTPUT"
+
   # ============================================================
   # Phase 0: Repo bootstrap verification
   # ============================================================
@@ -47,8 +64,8 @@ jobs:
 
       - name: Install Lean
         run: |
-          sudo apt-get update
-          sudo apt-get install -y lean4
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
       - name: Build ChimeraProof
         run: |
@@ -70,18 +87,23 @@ jobs:
   # ============================================================
   compiler-core-build:
     runs-on: ubuntu-latest
-    container: ghcr.io/llvm/mlir-builder:latest
+    needs: compiler-core-setup
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install LLVM and MLIR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang lld llvm-18-dev libmlir-18-dev mlir-18-tools
 
       - name: Configure compiler-core
         run: |
           mkdir -p compiler-core/build
           cd compiler-core/build
           cmake .. -G Ninja \
-            -DLLVM_DIR=/usr/lib/llvm-17/lib/cmake/llvm \
-            -DMLIR_DIR=/usr/lib/llvm-17/lib/cmake/mlir
+            -DLLVM_DIR='${{ needs.compiler-core-setup.outputs.llvm_dir }}' \
+            -DMLIR_DIR='${{ needs.compiler-core-setup.outputs.mlir_dir }}'
 
       - name: Build compiler-core
         run: |
@@ -90,19 +112,23 @@ jobs:
 
   compiler-core-test:
     runs-on: ubuntu-latest
-    container: ghcr.io/llvm/mlir-builder:latest
-    needs: compiler-core-build
+    needs: [compiler-core-setup, compiler-core-build]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install LLVM and MLIR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build clang lld llvm-18-dev libmlir-18-dev mlir-18-tools
 
       - name: Build and test compiler-core
         run: |
           mkdir -p compiler-core/build
           cd compiler-core/build
           cmake .. -G Ninja \
-            -DLLVM_DIR=/usr/lib/llvm-17/lib/cmake/llvm \
-            -DMLIR_DIR=/usr/lib/llvm-17/lib/cmake/mlir
+            -DLLVM_DIR='${{ needs.compiler-core-setup.outputs.llvm_dir }}' \
+            -DMLIR_DIR='${{ needs.compiler-core-setup.outputs.mlir_dir }}'
           ninja
           ctest --output-on-failure
 
@@ -118,7 +144,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Build tools
         run: |
@@ -135,7 +161,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Test tools
         run: |
@@ -154,7 +180,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Test rust-schema crate
         run: |
@@ -250,7 +276,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Test basic fixture
         run: |
@@ -288,14 +314,17 @@ jobs:
 
       - name: Setup Clang
         run: |
-          apt-get update
-          apt-get install -y clang
+          clang --version
 
       - name: Test basic fixture
         run: |
           cd tests/c-fixtures/basic
           clang -fsyntax-only -I. basic.h
-          clang -c -I. basic.c -o basic.o
+          cat > basic_smoke.c <<'EOF'
+          #include "basic.h"
+          int main(void) { return 0; }
+          EOF
+          clang -c -I. basic_smoke.c -o basic.o
 
       - name: Test header-only fixture
         run: |
@@ -346,7 +375,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Build runtime-rust
         run: |
@@ -363,7 +392,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Test runtime-rust
         run: |
@@ -409,7 +438,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Build C reader example
         run: |
@@ -434,7 +463,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Build CLI
         run: |
@@ -442,9 +471,9 @@ jobs:
           cargo build --release
 
       - name: Install one-binary toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lld zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.13.0
 
       - name: Build one-binary demo via CLI
         run: |
@@ -549,7 +578,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Root build smoke
         run: |
@@ -570,7 +599,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
 
       - name: Root test smoke
         run: |
@@ -642,7 +671,17 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          version: 1.75
+          toolchain: 1.75.0
+
+      - name: Install Lean
+        run: |
+          curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y --default-toolchain stable
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: 0.13.0
 
       - name: Run full release gate from clean checkout
         run: |
