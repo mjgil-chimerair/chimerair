@@ -1,6 +1,7 @@
 //! chimera-cli integration tests
 
 use std::fs;
+use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
@@ -103,6 +104,31 @@ fn create_fake_proof_bridge(dir: &std::path::Path) -> PathBuf {
     perms.set_mode(0o755);
     fs::set_permissions(&fake_bridge, perms).unwrap();
     fake_bridge
+}
+
+#[cfg(unix)]
+fn create_fake_zig(dir: &std::path::Path) -> PathBuf {
+    let fake_zig = dir.join("zig");
+    fs::write(
+        &fake_zig,
+        "#!/bin/sh\nset -eu\nif [ \"${1:-}\" = \"version\" ]; then\n  echo \"0.13.0-test\"\n  exit 0\nfi\nout=\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    -femit-bin=*) out=${1#-femit-bin=} ;;\n  esac\n  shift\n done\nif [ -z \"$out\" ]; then\n  echo \"missing -femit-bin output\" >&2\n  exit 1\nfi\ntmp_c=$(mktemp \"${TMPDIR:-/tmp}/chimera-fake-zig.XXXXXX.c\")\ntrap 'rm -f \"$tmp_c\"' EXIT\ncat > \"$tmp_c\" <<'EOF'\n#include <stddef.h>\n#include <stdint.h>\nuint32_t chimera_zig_crc32(const uint8_t* data, size_t len) {\n  uint32_t checksum = 0;\n  for (size_t i = 0; i < len; ++i) {\n    checksum = (checksum * 33u) ^ data[i];\n  }\n  return checksum;\n}\nEOF\n\"${CC:-cc}\" -c \"$tmp_c\" -o \"$out\"\n",
+    )
+    .expect("failed to write fake zig");
+
+    use std::os::unix::fs::PermissionsExt;
+    let mut perms = fs::metadata(&fake_zig).unwrap().permissions();
+    perms.set_mode(0o755);
+    fs::set_permissions(&fake_zig, perms).unwrap();
+    fake_zig
+}
+
+#[cfg(unix)]
+fn prepend_path(dir: &std::path::Path) -> OsString {
+    let mut paths = vec![dir.to_path_buf()];
+    if let Some(existing) = std::env::var_os("PATH") {
+        paths.extend(std::env::split_paths(&existing));
+    }
+    std::env::join_paths(paths).expect("join PATH entries")
 }
 
 #[cfg(unix)]
@@ -742,65 +768,6 @@ language = "c"
         "wrapper directory should contain generated wrappers"
     );
 }
-
-#[cfg(unix)]
-#[test]
-fn test_build_produces_binary_metadata_and_wrappers_for_rust_with_fake_linker() {
-    let temp = TempDir::new().expect("failed to create temp dir");
-    let temp_path = temp.path();
-    let output_dir = temp_path.join("out");
-    fs::create_dir_all(&output_dir).expect("failed to create output dir");
-
-    let src = temp_path.join("lib.rs");
-    fs::write(
-        &src,
-        "#[no_mangle]\npub extern \"C\" fn entry() -> i32 { 0 }\n",
-    )
-    .expect("failed to write Rust source");
-
-    let manifest = temp_path.join("Chimera.toml");
-    fs::write(
-        &manifest,
-        r#"
-version = "0.1.0"
-name = "test-rust-build"
-
-[[sources]]
-path = "lib.rs"
-language = "rust"
-"#,
-    )
-    .expect("failed to write manifest");
-
-    let fake_linker = create_fake_linker(temp_path);
-    let output = run_chimera_in_with_env(
-        &[
-            "build",
-            "--manifest",
-            manifest.to_str().unwrap(),
-            "--output",
-            output_dir.to_str().unwrap(),
-            "--skip-proof",
-        ],
-        temp_path,
-        &[("CHIMERA_LINKER", fake_linker.as_path())],
-    );
-
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(
-        output.status.success(),
-        "rust build should succeed with fake linker\nstdout:\n{}\nstderr:\n{}",
-        stdout,
-        stderr
-    );
-
-    assert!(output_dir.join("chimera_binary").exists());
-    assert!(output_dir.join("build_0.chmeta").exists());
-    assert!(output_dir.join("wrappers").join("build_0").exists());
-}
-
-#[cfg(unix)]
 
 mod cli_test_build_and_proof;
 mod cli_test_workspace;

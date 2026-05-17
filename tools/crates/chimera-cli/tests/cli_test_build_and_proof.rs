@@ -25,18 +25,27 @@ language = "zig"
     .expect("failed to write manifest");
 
     let fake_linker = create_fake_linker(temp_path);
-    let output = run_chimera_in_with_env(
-        &[
+    let fake_zig = create_fake_zig(temp_path);
+    let fake_path = prepend_path(
+        fake_zig
+            .parent()
+            .expect("fake zig should have a parent directory"),
+    );
+    let bin = chimera_bin();
+    let output = Command::new(&bin)
+        .args(&[
             "build",
             "--manifest",
             manifest.to_str().unwrap(),
             "--output",
             output_dir.to_str().unwrap(),
             "--skip-proof",
-        ],
-        temp_path,
-        &[("CHIMERA_LINKER", fake_linker.as_path())],
-    );
+        ])
+        .current_dir(temp_path)
+        .env("CHIMERA_LINKER", &fake_linker)
+        .env("PATH", fake_path)
+        .output()
+        .expect("failed to execute chimera");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -188,18 +197,26 @@ fn test_one_binary_example_builds_and_runs_with_real_linker() {
     let temp = TempDir::new().expect("failed to create temp dir");
     let output_dir = temp.path().join("out");
     fs::create_dir_all(&output_dir).expect("failed to create output dir");
+    let fake_zig = create_fake_zig(temp.path());
+    let fake_path = prepend_path(
+        fake_zig
+            .parent()
+            .expect("fake zig should have a parent directory"),
+    );
 
-    let output = run_chimera_in(
-        &[
+    let output = Command::new(chimera_bin())
+        .args(&[
             "build",
             "--manifest",
             manifest.to_str().unwrap(),
             "--output",
             output_dir.to_str().unwrap(),
             "--skip-proof",
-        ],
-        &repo_root,
-    );
+        ])
+        .current_dir(&repo_root)
+        .env("PATH", fake_path)
+        .output()
+        .expect("failed to execute chimera");
 
     let stderr = String::from_utf8_lossy(&output.stderr);
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -417,4 +434,59 @@ fn test_new_crates_exist_and_in_cargo_workspace() {
     }
 }
 
-/// Task 2 test: Use cargo metadata to verify all required crates are workspace members and no circular deps
+#[cfg(unix)]
+#[test]
+fn test_build_produces_binary_metadata_and_wrappers_for_rust_with_fake_linker() {
+    let temp = TempDir::new().expect("failed to create temp dir");
+    let temp_path = temp.path();
+    let output_dir = temp_path.join("out");
+    fs::create_dir_all(&output_dir).expect("failed to create output dir");
+
+    let src = temp_path.join("lib.rs");
+    fs::write(
+        &src,
+        "#[no_mangle]\npub extern \"C\" fn entry() -> i32 { 0 }\n",
+    )
+    .expect("failed to write Rust source");
+
+    let manifest = temp_path.join("Chimera.toml");
+    fs::write(
+        &manifest,
+        r#"
+version = "0.1.0"
+name = "test-rust-build"
+
+[[sources]]
+path = "lib.rs"
+language = "rust"
+"#,
+    )
+    .expect("failed to write manifest");
+
+    let fake_linker = create_fake_linker(temp_path);
+    let output = run_chimera_in_with_env(
+        &[
+            "build",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--output",
+            output_dir.to_str().unwrap(),
+            "--skip-proof",
+        ],
+        temp_path,
+        &[("CHIMERA_LINKER", fake_linker.as_path())],
+    );
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success(),
+        "rust build should succeed with fake linker\nstdout:\n{}\nstderr:\n{}",
+        stdout,
+        stderr
+    );
+
+    assert!(output_dir.join("chimera_binary").exists());
+    assert!(output_dir.join("build_0.chmeta").exists());
+    assert!(output_dir.join("wrappers").join("build_0").exists());
+}
