@@ -830,10 +830,18 @@ mod tests {
                 nodes: vec![CrateNode {
                     id: CrateId(0),
                     name: "test_crate".to_string(),
+                    package_name: None,
+                    version: None,
+                    source_kind: None,
+                    source: None,
+                    source_ref: None,
                     edition: "2021".to_string(),
                     crate_type: CrateType::Library,
                     dependency_crates: vec![],
                     extern_prelude: vec![],
+                    features: vec![],
+                    default_features: true,
+                    optional: false,
                 }],
             },
             items: vec![RsnapItem {
@@ -1130,7 +1138,7 @@ mod tests {
         );
         assert_eq!(key.kind, RustArtifactKind::RmirPack);
         assert_eq!(key.target, "x86_64-unknown-linux-gnu");
-        assert_eq!(key.schema_version, 1);
+        assert_eq!(key.schema_version, CURRENT_SCHEMA_VERSION);
         assert_eq!(key.fingerprint.len(), 64);
     }
 
