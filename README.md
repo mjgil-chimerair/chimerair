@@ -21,6 +21,34 @@ ChimeraIR is under active development. The project includes a Lean 4 proof syste
 ./build.sh
 ```
 
+To build the shared Chimera CLI directly:
+
+```bash
+cd tools
+cargo build --release -p chimera-cli
+```
+
+That produces `tools/target/release/chimera`, which is the entrypoint used for
+the three current binary variants in `../chimera-beam`:
+
+```bash
+HOST_TRIPLE=x86_64-unknown-linux-gnu
+CHIMERA=tools/target/release/chimera
+
+cd ../chimera-beam
+"$CHIMERA" build --manifest Chimera.toml --target "$HOST_TRIPLE" --output ./build-abi
+"$CHIMERA" build --manifest Chimera.adapter.toml --target "$HOST_TRIPLE" --output ./build-adapter
+"$CHIMERA" build --manifest Chimera.separate.toml --target "$HOST_TRIPLE" --output ./build-semantic
+```
+
+These correspond to:
+
+- ABI binary via `Chimera.toml`
+- Chimera adapter binary via `Chimera.adapter.toml`
+- Chimera semantic binary via `Chimera.separate.toml`
+
+Each build currently emits `chimera_binary` in the selected output directory.
+
 ## Testing
 
 ```bash

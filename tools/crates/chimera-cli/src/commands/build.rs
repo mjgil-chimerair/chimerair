@@ -561,6 +561,7 @@ roots = ["Cargo.toml"]
 manifest = "Cargo.toml"
 package = "chimera_erlang_beam_runtime"
 crate_types = ["staticlib"]
+exported_symbols = ["beam_runtime_init"]
 
 [[components]]
 id = "beam_launcher"

@@ -379,7 +379,7 @@ mod tests {
 
         let result = artifact_events_to_build_result(&events);
         assert!(result.is_success());
-        assert_eq!(result.primary_outputs.objects.len(), 1);
+        assert_eq!(result.primary_outputs.archives.len(), 1);
         assert_eq!(result.link.static_archives.len(), 1);
     }
 

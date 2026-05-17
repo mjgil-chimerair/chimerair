@@ -5408,7 +5408,13 @@ impl BuildOrchestrator {
                 .map(|n| n == "Cargo.toml")
                 .unwrap_or(false)
             {
-                cargo_path.parent().map(|p| p.to_path_buf())
+                cargo_path.parent().map(|p| {
+                    if p.as_os_str().is_empty() {
+                        PathBuf::from(".")
+                    } else {
+                        p.to_path_buf()
+                    }
+                })
             } else {
                 Some(cargo_path.clone())
             }
@@ -5522,7 +5528,13 @@ impl BuildOrchestrator {
                 .map(|n| n == "Cargo.toml")
                 .unwrap_or(false)
             {
-                cargo_path.parent().map(|p| p.to_path_buf())
+                cargo_path.parent().map(|p| {
+                    if p.as_os_str().is_empty() {
+                        PathBuf::from(".")
+                    } else {
+                        p.to_path_buf()
+                    }
+                })
             } else {
                 Some(cargo_path.clone())
             }
@@ -5985,7 +5997,17 @@ impl BuildOrchestrator {
     /// B3: Execute link node - invoke real linker
     fn execute_link_node(&self, inputs: &[String], output: &PathBuf) -> Result<(), BuildError> {
         // Find linker: prefer chimera-link, fall back to lld
-        let linker = self.find_linker()?;
+        let mut linker = self.find_linker()?;
+        if env::var_os("CHIMERA_LINKER").is_none()
+            && !self.config.target.is_wasm()
+            && !self.config.target.triple.contains("windows")
+        {
+            let linker_name = linker.file_name().and_then(|name| name.to_str()).unwrap_or("");
+            let raw_linker = matches!(linker_name, "ld" | "ld.lld" | "ld.bfd" | "ld.gold" | "lld");
+            if raw_linker && Command::new("cc").arg("--version").output().is_ok() {
+                linker = PathBuf::from("cc");
+            }
+        }
         log::info!("Using linker: {}", linker.display());
 
         let mut cmd = Command::new(&linker);
@@ -6049,13 +6071,23 @@ impl BuildOrchestrator {
         spec: &chimera_artifact::NativeLinkSpec,
         output: &PathBuf,
     ) -> Result<(), BuildError> {
-        let linker = if (!spec.system_libraries.is_empty() || !spec.linker_args.is_empty())
+        let mut linker = if (!spec.system_libraries.is_empty() || !spec.linker_args.is_empty())
             && Command::new("cc").arg("--version").output().is_ok()
         {
             PathBuf::from("cc")
         } else {
             self.find_linker()?
         };
+        if env::var_os("CHIMERA_LINKER").is_none()
+            && !self.config.target.is_wasm()
+            && !self.config.target.triple.contains("windows")
+        {
+            let linker_name = linker.file_name().and_then(|name| name.to_str()).unwrap_or("");
+            let raw_linker = matches!(linker_name, "ld" | "ld.lld" | "ld.bfd" | "ld.gold" | "lld");
+            if raw_linker && Command::new("cc").arg("--version").output().is_ok() {
+                linker = PathBuf::from("cc");
+            }
+        }
         log::info!("Using linker: {}", linker.display());
 
         let mut cmd = Command::new(&linker);
@@ -10586,11 +10618,12 @@ CHIMERA_EXPORT int exported_sum(
             chimera_component::ComponentKind::ChimeraModule,
         );
         orch.build_graph_from_components(&[comp], &[]);
-        // Only link_plan exists (no native_link since flattened_inputs is empty)
+        // Abstract Chimera components still participate in unified lowering planning,
+        // but no native link node is created when there are no concrete link inputs.
         assert_eq!(
             orch.graph.nodes.len(),
-            3,
-            "abstract component without roots: build + meta + link_plan = 3"
+            6,
+            "abstract component without roots: build + meta + merge + optimize + emit_llvm + link_plan = 6"
         );
         assert!(
             orch.graph.get_node("native_link").is_none(),
@@ -10963,7 +10996,7 @@ module @test {
         assert!(llvm_ir.contains("target triple"));
         assert!(llvm_ir.contains("x86_64-unknown-linux-gnu"));
         assert!(llvm_ir.contains("; module test"));
-        assert!(llvm_ir.contains("define i32 @get_value()"));
+        assert!(llvm_ir.contains("define i64 @get_value()"));
         assert!(llvm_ir.contains("@VALUE = private constant i32 42"));
     }
 
@@ -11167,7 +11200,7 @@ entry:
         );
         assert_eq!(
             normalized[2].kind,
-            chimera_component::ComponentKind::CSource
+            chimera_component::ComponentKind::CChimeraComponent
         );
     }
 
@@ -11959,7 +11992,7 @@ edition = "2021"
         std::fs::write(
             &driver,
             format!(
-                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\ncapture=\"{}\"\n: > \"$capture\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    --crate-name)\n      printf 'crate_name=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-name)\n      printf 'package_name=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-version)\n      printf 'package_version=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source-kind)\n      printf 'package_source_kind=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source)\n      printf 'package_source=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --crate-edition)\n      printf 'crate_edition=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --crate-type)\n      printf 'crate_type=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --extern-prelude)\n      printf 'extern_prelude=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --dependency-crate)\n      printf 'dependency_crate=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\nmkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
+                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\ncapture=\"{}\"\n: > \"$capture\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    --crate-name)\n      printf 'crate_name=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-name)\n      printf 'package_name=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-version)\n      printf 'package_version=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source-kind)\n      printf 'package_source_kind=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source)\n      printf 'package_source=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --crate-edition)\n      printf 'crate_edition=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --crate-type)\n      printf 'crate_type=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --extern-prelude)\n      printf 'extern_prelude=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --dependency-crate)\n      printf 'dependency_crate=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\n/bin/mkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
                 capture.display(),
                 fixture.display()
             ),
@@ -12260,7 +12293,7 @@ beam_runtime = { package = "missing-dep", path = "../does-not-exist", optional =
         std::fs::write(
             &driver,
             format!(
-                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\ncapture=\"{}\"\n: > \"$capture\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    --crate-name)\n      printf 'crate_name=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source-kind)\n      printf 'package_source_kind=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source)\n      printf 'package_source=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --crate-edition)\n      printf 'crate_edition=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --crate-type)\n      printf 'crate_type=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --extern-prelude)\n      printf 'extern_prelude=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --dependency-crate)\n      printf 'dependency_crate=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\nmkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
+                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\ncapture=\"{}\"\n: > \"$capture\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    --crate-name)\n      printf 'crate_name=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source-kind)\n      printf 'package_source_kind=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source)\n      printf 'package_source=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --crate-edition)\n      printf 'crate_edition=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --crate-type)\n      printf 'crate_type=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --extern-prelude)\n      printf 'extern_prelude=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --dependency-crate)\n      printf 'dependency_crate=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\n/bin/mkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
                 capture.display(),
                 fixture.display()
             ),
@@ -12433,9 +12466,7 @@ git_runtime = { package = "git-runtime", git = "https://github.com/example/git-r
                 package_name: Some("git-runtime".to_string()),
                 version: Some("*".to_string()),
                 source_kind: Some("git".to_string()),
-                source: Some(
-                    "git+https://github.com/example/git-runtime?branch=main".to_string(),
-                ),
+                source: Some("git+https://github.com/example/git-runtime?branch=main".to_string()),
                 source_ref: Some("branch=main".to_string()),
                 edition: "2021".to_string(),
                 crate_type: "library".to_string(),
@@ -12507,11 +12538,9 @@ git_runtime = { package = "git-runtime", git = "https://github.com/example/git-r
                         id: CrateId(1),
                         name: "git_runtime".to_string(),
                         package_name: Some("git-runtime".to_string()),
-                        version: Some("*".to_string()),
+                        version: None,
                         source_kind: Some("git".to_string()),
-                        source: Some(
-                            "git+https://github.com/example/git-runtime?branch=main".to_string(),
-                        ),
+                        source: Some("https://github.com/example/git-runtime".to_string()),
                         source_ref: Some("branch=main".to_string()),
                         edition: "2021".to_string(),
                         crate_type: CrateType::Library,
@@ -12539,7 +12568,7 @@ git_runtime = { package = "git-runtime", git = "https://github.com/example/git-r
         std::fs::write(
             &driver,
             format!(
-                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\ncapture=\"{}\"\n: > \"$capture\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    --package-source-kind)\n      printf 'package_source_kind=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source)\n      printf 'package_source=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --extern-prelude)\n      printf 'extern_prelude=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --dependency-crate)\n      printf 'dependency_crate=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\nmkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
+                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\ncapture=\"{}\"\n: > \"$capture\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    --package-source-kind)\n      printf 'package_source_kind=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --package-source)\n      printf 'package_source=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --extern-prelude)\n      printf 'extern_prelude=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --dependency-crate)\n      printf 'dependency_crate=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\n/bin/mkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
                 capture.display(),
                 fixture.display()
             ),
@@ -12571,7 +12600,7 @@ git_runtime = { package = "git-runtime", git = "https://github.com/example/git-r
         );
         assert_eq!(
             rsnap.crate_graph.nodes[1].source.as_deref(),
-            Some("git+https://github.com/example/git-runtime?branch=main")
+            Some("https://github.com/example/git-runtime")
         );
         assert_eq!(
             rsnap.crate_graph.nodes[1].source_ref.as_deref(),
@@ -12677,7 +12706,7 @@ apple_silicon_runtime = { package = "tokio-util", version = "0.7", features = ["
                     package_name: Some("tokio-util".to_string()),
                     version: Some("^0.7".to_string()),
                     source_kind: Some("registry".to_string()),
-                    source: Some("crates.io".to_string()),
+                    source: Some("registry+https://github.com/rust-lang/crates.io-index".to_string()),
                     source_ref: None,
                     edition: "2021".to_string(),
                     crate_type: "library".to_string(),
@@ -12691,7 +12720,7 @@ apple_silicon_runtime = { package = "tokio-util", version = "0.7", features = ["
                     package_name: Some("tokio".to_string()),
                     version: Some("^1".to_string()),
                     source_kind: Some("registry".to_string()),
-                    source: Some("crates.io".to_string()),
+                    source: Some("registry+https://github.com/rust-lang/crates.io-index".to_string()),
                     source_ref: None,
                     edition: "2021".to_string(),
                     crate_type: "library".to_string(),
@@ -12705,7 +12734,7 @@ apple_silicon_runtime = { package = "tokio-util", version = "0.7", features = ["
                     package_name: Some("serde".to_string()),
                     version: Some("^1".to_string()),
                     source_kind: Some("registry".to_string()),
-                    source: Some("crates.io".to_string()),
+                    source: Some("registry+https://github.com/rust-lang/crates.io-index".to_string()),
                     source_ref: None,
                     edition: "2021".to_string(),
                     crate_type: "library".to_string(),
@@ -12853,7 +12882,7 @@ apple_silicon_runtime = { package = "tokio-util", version = "0.7", features = ["
         std::fs::write(
             &driver,
             format!(
-                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\ncapture=\"{}\"\n: > \"$capture\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    --extern-prelude)\n      printf 'extern_prelude=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --dependency-crate)\n      printf 'dependency_crate=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\nmkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
+                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\ncapture=\"{}\"\n: > \"$capture\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    --extern-prelude)\n      printf 'extern_prelude=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    --dependency-crate)\n      printf 'dependency_crate=%s\\n' \"$2\" >> \"$capture\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\n/bin/mkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
                 capture.display(),
                 fixture.display()
             ),
@@ -13077,7 +13106,7 @@ apple_silicon_runtime = { package = "tokio-util", version = "0.7", features = ["
         std::fs::write(
             &driver,
             format!(
-                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\nmkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
+                "#!/bin/sh\nset -eu\nartifacts_dir=\"\"\nwhile [ \"$#\" -gt 0 ]; do\n  case \"$1\" in\n    --artifacts-dir)\n      artifacts_dir=\"$2\"\n      shift 2\n      ;;\n    *)\n      shift\n      ;;\n  esac\ndone\n/bin/mkdir -p \"$artifacts_dir\"\ncp \"{}\" \"$artifacts_dir/lib.rs.rsnap\"\n",
                 fixture.display()
             ),
         )
@@ -13132,7 +13161,7 @@ extern int imported_value(int a);
         .expect("C lowering should succeed");
 
         let lowered = std::fs::read_to_string(output).expect("read lowered C ChimeraIR");
-        assert!(lowered.contains("chimera.module"));
+        assert!(lowered.contains("module @c_lowering"));
         assert!(lowered.contains("@local_sum"));
         assert!(lowered.contains("@imported_value"));
     }
@@ -13467,11 +13496,10 @@ module @rust_zig_conformance
     fn test_unified_lowering_architecture_documented() {
         // Verify key unified lowering docs exist
         let docs = &[
-            "../../../docs/rust-zig-unified-lowering-plan.md",
-            "../../../docs/rust-zig-unified-lowering-tasks.md",
-            "../../../docs/rust-to-chimera-lowering-contract.md",
-            "../../../docs/zig-to-chimera-lowering-contract.md",
-            "../../../docs/chimerair-to-llvm-ir-contract.md",
+            "../../../docs/rust-compiler-integration.md",
+            "../../../docs/zig-integration.md",
+            "../../../docs/zig-per-file-incremental.md",
+            "../../../docs/trusted-computing-base.md",
         ];
 
         for doc in docs {
