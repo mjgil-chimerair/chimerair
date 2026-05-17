@@ -862,12 +862,23 @@ provider = "provider"
 symbols = {symbols}
 mode = "{mode}"
 wrapper = "none"
-proof = "disabled"
+proof = "{proof}"
 visibility = "pub"
 failure_policy = "error"
+{runtime_arg}
 "#,
                 mode = mode_str,
-                symbols = format!("{:?}", symbols)
+                symbols = format!("{:?}", symbols),
+                proof = if *mode_str == "generated-wrapper" {
+                    "optional"
+                } else {
+                    "disabled"
+                },
+                runtime_arg = if *mode_str == "runtime-dlopen" {
+                    "runtime_arg = \"libprovider.so\""
+                } else {
+                    ""
+                }
             );
             let manifest = ProjectManifest::parse(&toml_str).unwrap();
             let output = manifest.to_toml().unwrap();
@@ -875,7 +886,8 @@ failure_policy = "error"
             assert_eq!(reparsed.components.len(), 2);
             assert_eq!(reparsed.abi_edges.len(), 1);
             assert_eq!(
-                reparsed.abi_edges[0].mode, *mode_str,
+                reparsed.abi_edges[0].mode.as_deref(),
+                Some(*mode_str),
                 "link mode round-trips: {}",
                 mode_str
             );
@@ -934,10 +946,10 @@ runtime_arg = "libio.so"
         assert_eq!(reparsed.abi_edges.len(), 2);
         // Verify first edge (direct-link with math)
         let math_edge = &reparsed.abi_edges[0];
-        assert_eq!(math_edge.mode, "direct-link");
+        assert_eq!(math_edge.mode.as_deref(), Some("direct-link"));
         // Verify second edge (runtime-dlopen with io)
         let io_edge = &reparsed.abi_edges[1];
-        assert_eq!(io_edge.mode, "runtime-dlopen");
+        assert_eq!(io_edge.mode.as_deref(), Some("runtime-dlopen"));
         assert_eq!(io_edge.runtime_arg.as_deref(), Some("libio.so"));
     }
 
@@ -957,11 +969,9 @@ modules = [
   { name = "lib1", path = "src/lib1.zig" },
   { name = "lib2", path = "src/lib2.zig" }
 ]
-imports = [
-  { name = "std", path = "/zig/std" }
-]
-target = { triple = "x86_64-linux", features = [] }
-opt_level = "ReleaseFast"
+imports = { std = "/zig/std" }
+target = "x86_64-linux"
+opt_level = 3
 "#;
         let manifest = ProjectManifest::parse(toml_str).unwrap();
         let output = manifest.to_toml().unwrap();
@@ -976,8 +986,6 @@ opt_level = "ReleaseFast"
 
     #[test]
     fn test_v2_manifest_json_roundtrip() {
-        use std::collections::BTreeMap;
-
         let toml_str = r#"
 version = "0.2.0"
 name = "json-test"
@@ -1027,9 +1035,9 @@ defines = [
   { name = "NDEBUG", value = "1" },
   { name = "USE_FEATURE_X" }
 ]
-target = { triple = "x86_64-linux", features = ["sse2", "avx2"] }
-opt_level = "ReleaseFast"
-debug = 2
+target = "x86_64-linux"
+opt_level = 3
+debug = true
 "#;
         let manifest = ProjectManifest::parse(toml_str).unwrap();
         let output = manifest.to_toml().unwrap();

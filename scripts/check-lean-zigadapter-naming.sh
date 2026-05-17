@@ -7,10 +7,23 @@ cd "$ROOT_DIR"
 
 echo "=== Lean ZigAdapter Naming Check ==="
 
-if rg -n \
-  --glob '!scripts/check-lean-zigadapter-naming.sh' \
-  "ZigAdapater|Adapater" \
-  ChimeraProof docs scripts .github tools; then
+if command -v rg >/dev/null 2>&1; then
+  search_cmd=(
+    rg -n
+    --glob '!scripts/check-lean-zigadapter-naming.sh'
+    "ZigAdapater|Adapater"
+    ChimeraProof docs scripts .github tools
+  )
+else
+  search_cmd=(
+    grep -RInE
+    --exclude=check-lean-zigadapter-naming.sh
+    "ZigAdapater|Adapater"
+    ChimeraProof docs scripts .github tools
+  )
+fi
+
+if "${search_cmd[@]}"; then
   echo
   echo "FAILED: Found legacy ZigAdapater typo references."
   exit 1

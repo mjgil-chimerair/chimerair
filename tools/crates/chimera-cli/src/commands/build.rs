@@ -330,6 +330,7 @@ pub fn run(
     } else {
         vec![]
     };
+    let uses_legacy_sources = !sources.is_empty();
 
     let components = if let Some(ref manifest) = project_manifest {
         let manifest_dir = manifest_path.parent().unwrap_or(std::path::Path::new("."));
@@ -395,34 +396,52 @@ pub fn run(
         }
     }
 
-    match orchestrator.build_from_components(&components, &abi_edges) {
-        Ok(results) => {
-            log::info!("Build successful: {} components built", results.len());
-            // Verify the final executable exists before claiming success
-            let exec_path = output_dir.join("chimera_binary");
-            if exec_path.exists() {
-                log::info!("Final binary ready: {}", exec_path.display());
-            } else if !components.is_empty() {
-                log::warn!(
-                    "Build claimed success but no binary produced at: {}",
-                    exec_path.display()
-                );
+    let exec_path = output_dir.join("chimera_binary");
+
+    if uses_legacy_sources {
+        match orchestrator.build(&sources, &metadata) {
+            Ok(path) => {
+                log::info!("Legacy source build completed: {}", path.display());
+                if exec_path.exists() {
+                    log::info!("Final binary ready: {}", exec_path.display());
+                } else {
+                    anyhow::bail!(
+                        "legacy source build completed without producing {}",
+                        exec_path.display()
+                    );
+                }
+            }
+            Err(e) => {
+                log::error!("Legacy source build failed: {}", e);
+                return Err(anyhow::anyhow!("build failed: {}", e));
             }
         }
-        Err(e) => {
-            if components.is_empty() {
-                log::info!("No components to build. Create a Chimera.toml with [[components]] to define your project.");
-                log::info!("Example:");
-                log::info!("  [[components]]");
-                log::info!("  id = \"my_c_lib\"");
-                log::info!("  language = \"c\"");
-                log::info!("  kind = \"c-source\"");
-                log::info!("  roots = [\"src/main.c\"]");
-            } else {
+    } else if !components.is_empty() {
+        match orchestrator.build_from_components(&components, &abi_edges) {
+            Ok(results) => {
+                log::info!("Build successful: {} components built", results.len());
+                if exec_path.exists() {
+                    log::info!("Final binary ready: {}", exec_path.display());
+                } else {
+                    anyhow::bail!(
+                        "build claimed success but no binary produced at: {}",
+                        exec_path.display()
+                    );
+                }
+            }
+            Err(e) => {
                 log::error!("Build failed: {}", e);
+                return Err(anyhow::anyhow!("build failed: {}", e));
             }
-            return Err(anyhow::anyhow!("build failed: {}", e));
         }
+    } else {
+        log::info!("No components or sources to build. Create a Chimera.toml with [[components]] or [[sources]] to define your project.");
+        log::info!("Example:");
+        log::info!("  [[components]]");
+        log::info!("  id = \"my_c_lib\"");
+        log::info!("  language = \"c\"");
+        log::info!("  kind = \"c-source\"");
+        log::info!("  roots = [\"src/main.c\"]");
     }
 
     log::info!("Build finished");
